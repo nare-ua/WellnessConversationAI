@@ -3,43 +3,24 @@ import random
 from openpyxl import Workbook, load_workbook
 # from kobert_transformers import get_tokenizer
 from kogpt2_transformers import get_kogpt2_tokenizer
-def tweet_dialog_dataset():
-  root_path = "../data"
-  tweet_file = root_path + "/tweeter_dialog_dataset.xlsx"
-  tweet_file_output = root_path + "/tweeter_dialog_data.txt"
 
-  f = open(tweet_file_output, 'w')
-
-  wb = load_workbook(filename=tweet_file)
-
+def prepare_wellness(rootpath):
+  wellness_file = root_path/"wellness_dialog_dataset.xlsx"
+  wb = load_workbook(filename=wellness_file)
   ws = wb[wb.sheetnames[0]]
-  # print(sheet)
-  for row in ws.iter_rows():
-    for cell in row:
-      if cell.value == None:
-        break
-      # print(cell.value)
-      f.write(cell.value + "\n")
-    # print("\n\n\n")
-    f.write("\n\n\n")
-
-  f.close()
 
 def wellness_question_data():
   root_path = "../data"
   wellness_file = root_path + "/wellness_dialog_dataset.xlsx"
   wellness_q_output = root_path + "/wellness_dialog_question.txt"
 
-  f = open(wellness_q_output, 'w')
+  with open(wellness_q_output, 'w') as f:
+    wb = load_workbook(filename=wellness_file)
 
-  wb = load_workbook(filename=wellness_file)
-
-  ws = wb[wb.sheetnames[0]]
-  # print(sheet)
-  for row in ws.iter_rows():
-    f.write(row[0].value + "    " + row[1].value + "\n")
-
-  f.close()
+    ws = wb[wb.sheetnames[0]]
+    # print(sheet)
+    for row in ws.iter_rows():
+      f.write(row[0].value + "    " + row[1].value + "\n")
 
 def wellness_answer_data():
   root_path = "../data"
@@ -81,6 +62,14 @@ def category_data():
   o_f.close()
   i_f.close()
 
+def wellness_text_classification_data(inpu):
+  wellness_file = root_path/"wellness_dialog_dataset.xlsx"
+  wb = load_workbook(filename=wellness_file)
+  ws = wb[wb.sheetnames[0]]
+  for row in ws.iter_rows():
+    f.write(row[0].value + "    " + row[1].value + "\n")
+  
+
 def wellness_text_classification_data():
   root_path = "../data"
   wellness_category_file = root_path + "/wellness_dialog_category.txt"
@@ -113,11 +102,10 @@ def wellness_text_classification_data():
 
 def wellness_dialog_for_autoregressive():
   root_path = "../data"
-  wellness_file = root_path + "/wellness_dialog_dataset.xlsx"
+
   wellness_answer_file = root_path + "/wellness_dialog_answer.txt"
   wellness_question_file = root_path + "/wellness_dialog_question.txt"
   wellness_autoregressive_file = root_path + "/wellness_dialog_for_autoregressive.txt"
-
 
   answ_file = open(wellness_answer_file, 'r')
   ques_file = open(wellness_question_file, 'r')
