@@ -38,5 +38,5 @@ echo "MODULE_NAME=$MODULE_NAME"
 echo "APP_MODULE=$APP_MODULE"
 #exec gunicorn -k "$WORKER_CLASS" -c "$GUNICORN_CONF" "/mnt/data/pretrained/tacotron2/tacotron2_1032590_6000_amp" --waveveglow "/mnt/data/pretrained/tacotron2/waveglow_1076430_14000_amp" "$APP_MODULE"
 #exec gunicorn -k "$WORKER_CLASS" -c "$GUNICORN_CONF" "$APP_MODULE"
-nvidia-smi
+#nvidia-smi
 exec uvicorn --host 0.0.0.0 --reload "$APP_MODULE"

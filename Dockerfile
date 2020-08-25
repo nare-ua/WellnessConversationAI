@@ -5,8 +5,7 @@ ADD . /workspace
 WORKDIR /workspace
 
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir uvicorn gunicorn
-RUN pip install --no-cache-dir fastapi
+RUN pip install --no-cache-dir uvicorn gunicorn fastapi
 
 #COPY ./start.sh /start.sh
 RUN chmod +x /workspace/app/start.sh
