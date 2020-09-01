@@ -27,4 +27,4 @@ w = Wellness()
 @app.get("/talk")
 async def talk(q: str = "벽에 머리를 부딪히는 느낌이야"):
   answers, labels = w([q])
-  return {"labels": labels, "answer": answers, "questions": [q]}
+  return {"labels": labels, "answer": answers, "questions": [q], "text": answers[0]}
