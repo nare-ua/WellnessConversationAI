@@ -2,16 +2,6 @@ from transformers.tokenization_auto import AutoTokenizer
 import torch
 import random
 
-
-answers = torch.load('answers.pt')
-label_map = torch.load('label_map.pt')
-
-model_name_or_path = "monologg/koelectra-base-discriminator"
-tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
-
-fn = 'wellness_model.pt'
-model = torch.load(fn)
-
 samples = [
     "벽에 머리를 부딪히는 느낌이야",
     "허리가 아파서 움직임이 어렵네ㅠㅠ",
@@ -39,6 +29,16 @@ samples = [
     "모든걸 내 마음대로 하고 싶을 때 있잖아",
     "무엇이 불안한지 잘 모르겠어"
 ]
+
+answers = torch.load('answers.pt')
+label_map = torch.load('label_map.pt')
+
+model_name_or_path = "monologg/koelectra-base-discriminator"
+tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
+
+fn = 'wellness_model.pt'
+model = torch.load(fn)
+
 model.to('cpu')
 model.eval()
 
