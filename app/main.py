@@ -20,11 +20,12 @@ app.add_middleware(
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__file__)
 
-from wellness import Wellness
+from wellness import WellnessPL
 
-w = Wellness()
+w = WellnessPL()
 
 @app.get("/talk")
 async def talk(q: str = "벽에 머리를 부딪히는 느낌이야"):
-  answers, labels = w([q])
-  return {"labels": labels, "answer": answers, "questions": [q], "text": answers[0]}
+    logger.info(f"q={q}")
+    answers, labels = w([q])
+    return {"labels": labels, "answer": answers, "questions": [q], "text": answers[0]}

@@ -184,6 +184,7 @@ class WellnessClassifier(pl.LightningModule):
             help="Number of updates steps to accumulate before performing a backward/update pass.",
         )
         parser.add_argument("--train_batch_size", default=32, type=int)
+
         return parser
 
 def run_fit():
