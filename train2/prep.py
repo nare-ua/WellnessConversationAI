@@ -4,8 +4,9 @@ from itertools import islice
 import collections
 from pathlib import Path
 
-def load_data(datasetdir=Path('/mnt/data/datasets/wellness')):
+def load_data(datasetdir=Path('/mnt/data/datasets/wellness'), regen=False):
     p = datasetdir/'preprocessed.pt'
+    if regen and p.exists(): p.unlink()
     if not p.exists():
         utters, label_map, answers = parse_data()
         data = {
@@ -41,4 +42,4 @@ def parse_data(datasetdir=Path('/mnt/data/datasets/wellness')):
     return utters, label_map, answers
 
 if __name__ == "__main__":
-    load_data()
+    load_data(regen=True)
