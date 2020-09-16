@@ -92,7 +92,7 @@ class WellnessDataModule(LightningDataModule):
         return DataLoader(self.train, batch_size=self.args.batch_size, shuffle=True)
 
     def val_dataloader(self):
-        return DataLoader(self.train, batch_size=self.args.batch_size, drop_last=True)
+        return DataLoader(self.val, batch_size=self.args.batch_size, drop_last=True)
 
 class WellnessClassifier(pl.LightningModule):
     def __init__(self, hparams, num_labels):

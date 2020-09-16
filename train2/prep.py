@@ -4,15 +4,24 @@ from itertools import islice
 import collections
 from pathlib import Path
 
-def load(rootdir=Path(".")):
-    fns = ['utters.pt', 'label_map.pt', 'answers.pt']
-    if any(not (rootdir/fn).exists() for fn in fns):
-        return parse_data()
-    return [torch.load(p) for p in fns]
+def load_data(datasetdir=Path('/mnt/data/datasets/wellness')):
+    p = datasetdir/'preprocessed.pt'
+    if not p.exists():
+        utters, label_map, answers = parse_data()
+        data = {
+            'utters': utters,
+            'label_map': label_map,
+            'answers': answers
+        }
+        torch.save(data, p)
+        return utters, label_map, answers
+
+    data = torch.load(p)
+    return data['utters'], data['label_map'], data['answers']
 
 
-def parse_data():
-    fn = "wellness.xlsx"
+def parse_data(datasetdir=Path('/mnt/data/datasets/wellness')):
+    fn = datasetdir/"wellness.xlsx"
     wb = load_workbook(filename=fn)
     ws = wb[wb.sheetnames[0]]
 
@@ -29,9 +38,7 @@ def parse_data():
 
         if row[2].value is not None:
             answers[label_map[label]].append(row[2].value.strip())
-
-    torch.save(utters, 'utters.pt')
-    torch.save(label_map, 'label_map.pt')
-    torch.save(answers, 'answers.pt')
-
     return utters, label_map, answers
+
+if __name__ == "__main__":
+    load_data()
