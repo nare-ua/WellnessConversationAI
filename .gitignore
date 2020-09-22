@@ -1,3 +1,4 @@
 __pycache__
 train2/results/
 train2/logs/
+train2/lightning_logs/

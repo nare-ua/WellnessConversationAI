@@ -15,20 +15,8 @@ from pytorch_lightning.callbacks import EarlyStopping
 import torch
 from torch.optim import AdamW
 from pytorch_lightning.metrics.functional import accuracy
-
-
 import prep
-
-class WellnessDataset(Dataset):
-    def __init__(self, data):
-        self.data = data
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, index):
-        return self.data[index]
-
+from dataset import WellnessDataset
 
 class WellnessDataModule(LightningDataModule):
     def __init__(self, args):
@@ -38,7 +26,7 @@ class WellnessDataModule(LightningDataModule):
 
     def prepare_data(self):
         # called only on 1 GPU
-        self.utters, self.label_map, self.answers = prep.load()
+        self.utters, self.label_map, self.answers = prep.load_data()
         self.num_labels = len(self.label_map)
         print("# labels: ", len(self.label_map))
         print("# utterence:", sum(len(v) for v in self.utters.values()))
@@ -87,12 +75,14 @@ class WellnessDataModule(LightningDataModule):
 
         return train_dataset, test_dataset
 
-
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.args.batch_size, shuffle=True)
 
     def val_dataloader(self):
         return DataLoader(self.val, batch_size=self.args.batch_size, drop_last=True)
+
+    def test_dataloader(self):
+        return self.val_dataloader()
 
 class WellnessClassifier(pl.LightningModule):
     def __init__(self, hparams, num_labels):
@@ -101,6 +91,7 @@ class WellnessClassifier(pl.LightningModule):
         model_name_or_path = "monologg/koelectra-base-discriminator"
         config = AutoConfig.from_pretrained(model_name_or_path, num_labels=num_labels)
         self.model = AutoModelForSequenceClassification.from_pretrained(model_name_or_path, config=config)
+        self.num_labels = num_labels
 
     def forward(self, **inputs):
         return self.model(**inputs)
@@ -120,18 +111,28 @@ class WellnessClassifier(pl.LightningModule):
 
         outputs = self(**batch)
         val_loss, logits = outputs[:2]
-        targets = batch["labels"]
-        return {'val_loss': val_loss, "logits": logits, "target": targets}
+        target = batch["labels"]
+        return {'val_loss': val_loss, "logits": logits, "target": target}
+
+    def test_step(self, batch, batch_idx):
+        return self.validation_step(batch, batch_idx)
 
     def validation_epoch_end(self, outputs):
+        print(len(outputs))
         loss_val = torch.stack([x['val_loss'] for x in outputs]).mean()
         preds = torch.stack([x['logits'] for x in outputs]).argmax(dim=-1)
         targets = torch.stack([x['target'] for x in outputs])
-        acc = accuracy(preds, targets)
+        print("preds.shape=",preds.shape)
+        print("targets.shape=", targets.shape)
+
+        acc = accuracy(preds, targets, self.num_labels)
 
         log_dict = {'val_loss': loss_val, 'acc': acc}
 
         return {'log': log_dict, 'val_loss': log_dict['val_loss'], 'progress_bar': log_dict}
+
+    def test_epoch_end(self, outputs):
+        return self.validation_epoch_end(outputs)
 
     def get_lr_scheduler(self, opt):
         scheduler = get_linear_schedule_with_warmup(
@@ -144,8 +145,12 @@ class WellnessClassifier(pl.LightningModule):
         if mode == "fit":
             #total_devices = self.hparams.gpus * self.hparams.n_nodes
             total_devices = self.hparams.gpus
-            train_batches = len(self.train_dataloader()) // total_devices
+            train_batches = len(self.train_dataloader) // total_devices
             self.train_steps = (self.hparams.max_epochs * train_batches) // self.hparams.accumulate_grad_batches
+        elif mode == "test":
+            total_devices = self.hparams.gpus
+            test_batches = len(self.test_dataloader()) // total_devices
+            self.train_steps = test_batches
 
     def configure_optimizers(self):
         """Prepare optimizer and schedule (linear warmup and decay)"""
@@ -204,20 +209,42 @@ def run_fit():
     wellness_dm = WellnessDataModule(args)
     wellness_dm.prepare_data()
 
+    print("num labels=", wellness_dm.num_labels)
     model = WellnessClassifier(args, wellness_dm.num_labels)
 
-    early_stop_callback = EarlyStopping(
-        monitor='val_loss',
-        min_delta=0.00,
-        patience=5,
-        verbose=True,
-        mode='min'
-    )
+    wellness_dm = WellnessDataModule(args)
+    wellness_dm.prepare_data()
 
     trainer = Trainer.from_argparse_args(args, early_stop_callback=early_stop_callback)
     trainer.fit(model, wellness_dm)
 
-def test():
+def run_eval():
+    ckpt_path = "lightning_logs/version_0/checkpoints/epoch=24.ckpt"
+
+    import pprint
+    import random
+    parser = ArgumentParser()
+    parser = Trainer.add_argparse_args(parser)
+    parser = WellnessClassifier.add_model_specific_args(parser)
+    args = parser.parse_args()
+
+    wellness_dm = WellnessDataModule(args)
+    wellness_dm.prepare_data()
+
+    args.gpus = 1
+    args.batch_size = 8
+
+    model = WellnessClassifier(args, wellness_dm.num_labels)
+    ckpt = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
+    model.load_state_dict(ckpt['state_dict'])
+
+    trainer = Trainer.from_argparse_args(args)
+
+    trainer.test(model, datamodule=wellness_dm)
+
+def run_inference(ckpt_path=None):
+    ckpt_path = "lightning_logs/version_0/checkpoints/epoch=24.ckpt"
+
     import pprint
     import random
     parser = ArgumentParser()
@@ -226,7 +253,6 @@ def test():
     args = parser.parse_args()
 
     model = WellnessClassifier(args, 359)
-    ckpt_path = "lightning_logs/version_0/checkpoints/epoch=24.ckpt"
     ckpt = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
     model.load_state_dict(ckpt['state_dict'])
 
@@ -272,4 +298,4 @@ def test():
         print(f"{l}|{s}=>{r}")
 
 if __name__ == "__main__":
-    test()
+    run_eval()
