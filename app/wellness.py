@@ -173,12 +173,15 @@ class KoGPT2Chat(LightningModule):
                 print("Simsimi > {}".format(a.strip()))
 
     def talk(self, q):
+        print("here...0")
         tok = SentencepieceTokenizer(self.tok_path, num_best=0, alpha=0)
+        print("here...1")
         #sent_tokens = tok(sent)
         q_tok = tok(q)
         a = ''
         a_tok = []
-        while 1:
+        ix = 0
+        while ix < 128:
             input_ids = torch.LongTensor(
                 [self.vocab[U_TKN]] + self.vocab[q_tok] + [self.vocab[EOS]]+
                 #self.vocab[EOS, SENT] + self.vocab[sent_tokens] +
@@ -190,10 +193,12 @@ class KoGPT2Chat(LightningModule):
                 torch.argmax(
                     pred,
                     dim=-1).squeeze().numpy().tolist())[-1]
-            if gen == EOS:
+            #TODO: what is <pad>?
+            if gen == EOS or gen == '<pad>':
                 break
             a += gen.replace('▁', ' ')
             a_tok = tok(a)
+            ix += 1
         return a.strip()
 
 
