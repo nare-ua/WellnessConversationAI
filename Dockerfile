@@ -6,6 +6,8 @@ WORKDIR /workspace
 
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir uvicorn gunicorn fastapi pytorch-lightning
+RUN pip install mxnet gluonnlp sentencepiece pandas torch transformers pytorch_lightning
+RUN pip install git+https://github.com/SKT-AI/KoGPT2#egg=kogpt2
 
 #COPY ./start.sh /start.sh
 RUN chmod +x /workspace/app/start.sh

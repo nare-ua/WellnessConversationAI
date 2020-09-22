@@ -20,12 +20,14 @@ app.add_middleware(
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__file__)
 
-from wellness import WellnessPL
+from wellness import KoGPT2Chat
 
-w = WellnessPL()
+model = KoGPT2Chat.load_from_checkpoint("/mnt/data/pretrained/wellness/chatbot.ckpt")
 
 @app.get("/talk")
 async def talk(q: str = "벽에 머리를 부딪히는 느낌이야"):
     logger.info(f"q={q}")
-    answers, labels = w([q])
-    return {"labels": labels, "answer": answers, "questions": [q], "text": answers[0]}
+    ans = model.talk(q)
+    #answers, labels = w([q])
+    #return {"labels": labels, "answer": answers, "questions": [q], "text": answers[0]}
+    return {"answer": ans, "questions": q, "text": ans}
